@@ -99,10 +99,13 @@
         const adjustedInitialValue = pln * inflationFactor;
         const profitLoss = currentValue - adjustedInitialValue;
 
-        document.getElementById("result").textContent =
+        const resultText =
           `Wartość BTC dzisiaj: ${currentValue.toFixed(2)} PLN\n` +
+          (useInflation && date ? `Współczynnik inflacji: ${inflationFactor.toFixed(2)}\n` : "") +
           `Zmieniona wartość inwestycji (uwzględniając inflację): ${adjustedInitialValue.toFixed(2)} PLN\n` +
           `Zysk / Strata: ${profitLoss.toFixed(2)} PLN`;
+
+        document.getElementById("result").textContent = resultText;
       } catch (e) {
         document.getElementById("result").textContent = "Nie udało się pobrać kursu BTC. Sprawdź połączenie internetowe.";
       }
