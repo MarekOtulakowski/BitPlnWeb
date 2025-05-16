@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -8,13 +9,79 @@
   <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg">
   <title>BitPLN</title>
   <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    button { padding: 1rem; font-size: 1rem; }
+    body { font-family: sans-serif; padding: 2rem; max-width: 500px; margin: auto; }
+    input, button { display: block; margin-top: 1rem; padding: 0.5rem; font-size: 1rem; width: 100%; }
+    #wynik { margin-top: 2rem; font-weight: bold; white-space: pre-line; }
   </style>
 </head>
 <body>
   <h1>BitPLN</h1>
-  <p>Prototyp – aplikacja do przeliczania BTC na PLN</p>
-  <button onclick="alert('Witaj! Tu pojawi się funkcja przeliczania.')">Przelicz BTC</button>
+
+  <label>Kwota inwestycji (PLN):
+    <input type="number" id="kwota" placeholder="np. 1000" />
+  </label>
+
+  <label>Ilość kupionego BTC:
+    <input type="number" id="btc" step="0.000001" placeholder="np. 0.01" />
+  </label>
+
+  <label>Inflacja od dnia inwestycji (%):
+    <input type="number" id="inflacja" step="0.1" placeholder="np. 30" />
+  </label>
+
+  <button onclick="zapiszInwestycje()">Zapisz inwestycję</button>
+  <button onclick="oblicz()">Oblicz wartość BTC</button>
+
+  <div id="wynik"></div>
+
+  <script>
+    async function pobierzKursBTC() {
+      const res = await fetch('https://api.coindesk.com/v1/bpi/currentprice/PLN.json');
+      const dane = await res.json();
+      return dane.bpi.PLN.rate_float;
+    }
+
+    function zapiszInwestycje() {
+      const kwota = parseFloat(document.getElementById("kwota").value);
+      const btc = parseFloat(document.getElementById("btc").value);
+      const inflacja = parseFloat(document.getElementById("inflacja").value) || 0;
+
+      if (!isNaN(kwota) && !isNaN(btc)) {
+        localStorage.setItem("bitpln", JSON.stringify({ kwota, btc, inflacja }));
+        alert("Zapisano!");
+      }
+    }
+
+    async function oblicz() {
+      const dane = JSON.parse(localStorage.getItem("bitpln"));
+      if (!dane) {
+        alert("Najpierw zapisz inwestycję.");
+        return;
+      }
+
+      const kurs = await pobierzKursBTC();
+      const wartosc = dane.btc * kurs;
+      const roznicaNominalna = wartosc - dane.kwota;
+
+      // Uwzględnij inflację
+      const inflacjaProcent = dane.inflacja || 0;
+      const kwotaPoInflacji = dane.kwota * (1 + inflacjaProcent / 100);
+      const roznicaRealna = wartosc - kwotaPoInflacji;
+
+      document.getElementById("wynik").innerText =
+        `Aktualna wartość BTC: ${wartosc.toFixed(2)} PLN\n` +
+        `Zysk/Strata nominalna: ${roznicaNominalna.toFixed(2)} PLN\n` +
+        `Zysk/Strata realna (po inflacji ${inflacjaProcent}%): ${roznicaRealna.toFixed(2)} PLN`;
+    }
+
+    // Automatyczne wstawienie poprzednich danych
+    const dane = JSON.parse(localStorage.getItem("bitpln"));
+    if (dane) {
+      document.getElementById("kwota").value = dane.kwota;
+      document.getElementById("btc").value = dane.btc;
+      document.getElementById("inflacja").value = dane.inflacja || "";
+      oblicz();
+    }
+  </script>
 </body>
 </html>
