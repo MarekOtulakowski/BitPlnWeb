@@ -52,6 +52,7 @@
     <label><input type="checkbox" id="useInflation" /> Uwzględnij inflację</label>
     <label id="dateLabel" style="display:none">Data inwestycji: <input type="month" id="investmentDate" /></label>
     <button onclick="calculateBTCValue()">Oblicz wartość BTC</button>
+    <button onclick="saveInvestment()">Zapisz inwestycję</button>
     <button onclick="location.reload()">Odśwież stronę</button>
     <p id="result"></p>
   </div>
@@ -89,11 +90,11 @@
       }
 
       try {
-        const res = await fetch("https://api.coindesk.com/v1/bpi/currentprice/PLN.json");
+        const res = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=pln");
         if (!res.ok) throw new Error("HTTP error " + res.status);
 
         const data = await res.json();
-        const currentRate = data.bpi.PLN.rate_float;
+        const currentRate = data.bitcoin.pln;
         const currentValue = btc * currentRate;
         const adjustedInitialValue = pln * inflationFactor;
         const profitLoss = currentValue - adjustedInitialValue;
@@ -106,6 +107,34 @@
         document.getElementById("result").textContent = "Nie udało się pobrać kursu BTC. Sprawdź połączenie internetowe.";
       }
     }
+
+    function saveInvestment() {
+      const data = {
+        pln: document.getElementById("pln").value,
+        btc: document.getElementById("btc").value,
+        country: document.getElementById("country").value,
+        useInflation: document.getElementById("useInflation").checked,
+        investmentDate: document.getElementById("investmentDate").value
+      };
+      localStorage.setItem("bitplnInvestment", JSON.stringify(data));
+      alert("Inwestycja została zapisana.");
+    }
+
+    function loadInvestment() {
+      const saved = localStorage.getItem("bitplnInvestment");
+      if (!saved) return;
+      const data = JSON.parse(saved);
+      document.getElementById("pln").value = data.pln || "";
+      document.getElementById("btc").value = data.btc || "";
+      document.getElementById("country").value = data.country || "PL";
+      document.getElementById("useInflation").checked = data.useInflation;
+      if (data.useInflation) {
+        document.getElementById("dateLabel").style.display = "block";
+        document.getElementById("investmentDate").value = data.investmentDate || "";
+      }
+    }
+
+    window.onload = loadInvestment;
   </script>
 </body>
 </html>
