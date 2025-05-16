@@ -1,121 +1,15 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="BitPLN" />
-  <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg" />
-  <title>BitPLN</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      max-width: 500px;
-      margin: auto;
-    }
-    input,
-    button {
-      display: block;
-      margin-top: 1rem;
-      padding: 0.5rem;
-      font-size: 1rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    #wynik {
-      margin-top: 2rem;
-      font-weight: bold;
-      white-space: pre-line;
-    }
-  </style>
-</head>
+<head><meta charset="UTF-8" /><title>Test BitPLN</title></head>
 <body>
-  <h1>BitPLN</h1>
-
-  <label>Kwota inwestycji (PLN):
-    <input type="text" id="kwota" placeholder="np. 1000" inputmode="decimal" />
-  </label>
-
-  <label>Ilość kupionego BTC:
-    <input type="text" id="btc" placeholder="np. 0.01" inputmode="decimal" />
-  </label>
-
-  <label>Inflacja od dnia inwestycji (%):
-    <input type="text" id="inflacja" placeholder="np. 30" inputmode="decimal" />
-  </label>
-
-  <button onclick="zapiszInwestycje()">Zapisz inwestycję</button>
+  <input type="text" id="kwota" placeholder="Kwota PLN" />
+  <input type="text" id="btc" placeholder="Ilość BTC" />
   <button onclick="oblicz()">Oblicz wartość BTC</button>
 
-  <div id="wynik"></div>
-
   <script>
-    async function pobierzKursBTC() {
-      try {
-        const res = await fetch('https://api.coindesk.com/v1/bpi/currentprice/PLN.json');
-        if (!res.ok) throw new Error('Błąd pobierania kursu');
-        const dane = await res.json();
-        return dane.bpi.PLN.rate_float;
-      } catch (e) {
-        alert('Nie udało się pobrać kursu BTC: ' + e.message);
-        throw e;
-      }
+    function oblicz() {
+      alert("Funkcja oblicz została wywołana");
     }
-
-    function zapiszInwestycje() {
-      const kwota = parseFloat(document.getElementById("kwota").value.replace(",", "."));
-      const btc = parseFloat(document.getElementById("btc").value.replace(",", "."));
-      const inflacjaInput = document.getElementById("inflacja").value.trim();
-      const inflacja = inflacjaInput ? parseFloat(inflacjaInput.replace(",", ".")) : 0;
-
-      if (isNaN(kwota) || isNaN(btc) || kwota <= 0 || btc <= 0) {
-        alert("Podaj poprawne wartości kwoty inwestycji i BTC (większe od 0).");
-        return;
-      }
-
-      localStorage.setItem("bitpln", JSON.stringify({ kwota, btc, inflacja }));
-      alert("Zapisano inwestycję!");
-    }
-
-    async function oblicz() {
-      const daneRaw = localStorage.getItem("bitpln");
-      if (!daneRaw) {
-        alert("Najpierw zapisz inwestycję.");
-        return;
-      }
-
-      const dane = JSON.parse(daneRaw);
-
-      try {
-        const kurs = await pobierzKursBTC();
-        const wartosc = dane.btc * kurs;
-        const roznicaNominalna = wartosc - dane.kwota;
-
-        const inflacjaProcent = dane.inflacja || 0;
-        const kwotaPoInflacji = dane.kwota * (1 + inflacjaProcent / 100);
-        const roznicaRealna = wartosc - kwotaPoInflacji;
-
-        document.getElementById("wynik").innerText =
-          `Aktualna wartość BTC: ${wartosc.toFixed(2)} PLN\n` +
-          `Zysk/Strata nominalna: ${roznicaNominalna.toFixed(2)} PLN\n` +
-          `Zysk/Strata realna (po inflacji ${inflacjaProcent}%): ${roznicaRealna.toFixed(2)} PLN`;
-      } catch {
-        document.getElementById("wynik").innerText = "Błąd przy pobieraniu kursu BTC.";
-      }
-    }
-
-    // Automatyczne wczytanie danych z localStorage i pokazanie wyniku
-    window.onload = () => {
-      const daneRaw = localStorage.getItem("bitpln");
-      if (daneRaw) {
-        const dane = JSON.parse(daneRaw);
-        document.getElementById("kwota").value = dane.kwota;
-        document.getElementById("btc").value = dane.btc;
-        document.getElementById("inflacja").value = dane.inflacja || "";
-        oblicz();
-      }
-    };
   </script>
 </body>
 </html>
