@@ -14,8 +14,7 @@
       max-width: 500px;
       margin: auto;
     }
-    input,
-    button {
+    input, button {
       display: block;
       margin-top: 1rem;
       padding: 0.5rem;
@@ -58,6 +57,7 @@
         const dane = await res.json();
         return dane.bitcoin.pln;
       } catch (e) {
+        console.error("Błąd pobierania kursu:", e);
         alert('Nie udało się pobrać kursu BTC: ' + e.message);
         throw e;
       }
@@ -81,31 +81,47 @@
     async function oblicz() {
       const daneRaw = localStorage.getItem("bitpln");
       if (!daneRaw) {
-        alert("Najpierw zapisz inwestycję.");
+        document.getElementById("wynik").innerText = "Najpierw zapisz inwestycję.";
         return;
       }
 
-      const dane = JSON.parse(daneRaw);
+      const surowe = JSON.parse(daneRaw);
+      const dane = {
+        kwota: parseFloat(("" + surowe.kwota).replace(",", ".")),
+        btc: parseFloat(("" + surowe.btc).replace(",", ".")),
+        inflacja: parseFloat(("" + (surowe.inflacja || "0")).replace(",", "."))
+      };
+
+      console.log("Dane z localStorage:", dane);
+
+      if (isNaN(dane.kwota) || isNaN(dane.btc) || isNaN(dane.inflacja)) {
+        document.getElementById("wynik").innerText = "Niepoprawne dane inwestycji.";
+        return;
+      }
 
       try {
         const kurs = await pobierzKursBTC();
         const wartosc = dane.btc * kurs;
         const roznicaNominalna = wartosc - dane.kwota;
-
-        const inflacjaProcent = dane.inflacja || 0;
-        const kwotaPoInflacji = dane.kwota * (1 + inflacjaProcent / 100);
+        const kwotaPoInflacji = dane.kwota * (1 + dane.inflacja / 100);
         const roznicaRealna = wartosc - kwotaPoInflacji;
+
+        console.log("Kurs BTC:", kurs);
+        console.log("Wartosc BTC:", wartosc);
+        console.log("Zysk nominalny:", roznicaNominalna);
+        console.log("Zysk realny:", roznicaRealna);
 
         document.getElementById("wynik").innerText =
           `Aktualna wartość BTC: ${wartosc.toFixed(2)} PLN\n` +
           `Zysk/Strata nominalna: ${roznicaNominalna.toFixed(2)} PLN\n` +
-          `Zysk/Strata realna (po inflacji ${inflacjaProcent}%): ${roznicaRealna.toFixed(2)} PLN`;
-      } catch {
-        document.getElementById("wynik").innerText = "Błąd przy pobieraniu kursu BTC.";
+          `Zysk/Strata realna (po inflacji ${dane.inflacja}%): ${roznicaRealna.toFixed(2)} PLN`;
+      } catch (e) {
+        console.error("Błąd obliczeń:", e);
+        document.getElementById("wynik").innerText = "Błąd przy pobieraniu kursu BTC lub danych.";
       }
     }
 
-    // Automatyczne wczytanie danych z localStorage
+    // Automatyczne wczytanie danych po załadowaniu
     window.onload = () => {
       const daneRaw = localStorage.getItem("bitpln");
       if (daneRaw) {
