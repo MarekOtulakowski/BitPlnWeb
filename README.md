@@ -7,7 +7,14 @@ https://marekotulakowski.github.io/BitPlnWeb/
 
 # run on iOS
 Open the page in Safari on your iPhone.
+
 Click the share icon (square with an up arrow).
+
 Select “Add to Home Screen.”
+
 Give it a name, like BitPLNWeb, and click “Add.”
+
 Now you have an “app” on iOS without the App Store.
+
+# privacy
+The app saves your investment data locally in your browser data. They do not leave your device
