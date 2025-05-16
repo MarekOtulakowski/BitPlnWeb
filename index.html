@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -7,88 +6,65 @@
   <title>BitPLN</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      font-family: sans-serif;
       background-color: #121212;
       color: #ffffff;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
       padding: 20px;
     }
     input, button, select {
-      margin: 8px 0;
-      padding: 10px 12px;
+      margin: 8px;
+      padding: 8px;
       border-radius: 8px;
       border: none;
-      font-size: 1rem;
-      width: 100%;
-      box-sizing: border-box;
     }
     button {
       background-color: #1e88e5;
       color: white;
       cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #1565c0;
     }
     .card {
       background-color: #1f1f1f;
-      padding: 30px 24px;
+      padding: 20px;
       border-radius: 16px;
-      max-width: 420px;
+      max-width: 400px;
       width: 100%;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      box-sizing: border-box;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     label {
       display: block;
       margin-top: 12px;
-      font-weight: 600;
     }
-    #result {
-      white-space: pre-wrap;
-      margin-top: 20px;
-      font-size: 1.1rem;
+    .profit {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #00e676;
     }
-    #profitLoss {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-top: 10px;
+    .loss {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: #ff5252;
     }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>BitPLN</h1>
-    <label for="pln">Kwota inwestycji (PLN):</label>
-    <input type="number" id="pln" step="0.01" placeholder="np. 1000" />
-    
-    <label for="btc">Wartość BTC w chwili zakupu:</label>
-    <input type="number" step="0.00000001" id="btc" placeholder="np. 0.01" />
-    
-    <label for="country">Kraj:</label>
-    <select id="country">
-      <option value="PL">Polska</option>
-    </select>
-    
-    <label><input type="checkbox" id="useInflation" /> Uwzględnij inflację</label>
-    <label id="dateLabel" style="display:none">Data inwestycji:
-      <input type="month" id="investmentDate" />
+    <label>Kwota inwestycji (PLN): <input type="number" id="pln" /></label>
+    <label>Wartość BTC w chwili zakupu: <input type="number" step="0.00000001" id="btc" /></label>
+    <label>Kraj: 
+      <select id="country">
+        <option value="PL">Polska</option>
+      </select>
     </label>
-    
+    <label><input type="checkbox" id="useInflation" /> Uwzględnij inflację</label>
+    <label id="dateLabel" style="display:none">Data inwestycji: <input type="month" id="investmentDate" /></label>
     <button onclick="calculateBTCValue()">Oblicz wartość BTC</button>
     <button onclick="saveInvestment()">Zapisz inwestycję</button>
     <button onclick="location.reload()">Odśwież stronę</button>
-    
     <p id="result"></p>
-    <p id="profitLoss"></p>
   </div>
 
   <script>
@@ -96,43 +72,34 @@
       document.getElementById("dateLabel").style.display = this.checked ? "block" : "none";
     });
 
-    async function calculateInflationFactor(dateString) {
-      const monthlyFactors = {
-        "2021-12": 1.00,
+    async function fetchInflationFactor(dateString) {
+      const reference = "2021-12";
+      const data = {
+        "2021-12": 1.0,
         "2022-01": 1.03, "2022-12": 1.17,
         "2023-12": 1.24,
         "2024-12": 1.30,
         "2025-04": 1.35
       };
-
-      // Sort keys to find closest lower bound if date not exact
-      const keys = Object.keys(monthlyFactors).sort();
-      if (!dateString) return 1.0;
-      for (let i = keys.length - 1; i >= 0; i--) {
-        if (dateString >= keys[i]) {
-          return monthlyFactors[keys[i]];
-        }
-      }
-      return 1.0; // If date too early, no inflation data
+      const start = data[reference] || 1.0;
+      const end = data[dateString] || data["2025-04"] || 1.35;
+      return { factor: end / start, percentage: ((end / start - 1) * 100).toFixed(1) };
     }
 
     async function calculateBTCValue() {
-      const plnInput = document.getElementById("pln").value.replace(',', '.');
-      const btcInput = document.getElementById("btc").value.replace(',', '.');
-      const pln = parseFloat(plnInput);
-      const btc = parseFloat(btcInput);
+      const pln = parseFloat(document.getElementById("pln").value.replace(',', '.'));
+      const btc = parseFloat(document.getElementById("btc").value.replace(',', '.'));
       const useInflation = document.getElementById("useInflation").checked;
       const date = document.getElementById("investmentDate").value;
 
-      if (isNaN(pln) || isNaN(btc) || pln <= 0 || btc <= 0) {
-        document.getElementById("result").textContent = "Wprowadź poprawne, dodatnie dane.";
-        document.getElementById("profitLoss").textContent = "";
+      if (isNaN(pln) || isNaN(btc)) {
+        document.getElementById("result").textContent = "Wprowadź poprawne dane";
         return;
       }
 
-      let inflationFactor = 1.0;
+      let inflation = { factor: 1.0, percentage: 0.0 };
       if (useInflation && date) {
-        inflationFactor = await calculateInflationFactor(date);
+        inflation = await fetchInflationFactor(date);
       }
 
       try {
@@ -140,29 +107,19 @@
         if (!res.ok) throw new Error("HTTP error " + res.status);
 
         const data = await res.json();
-        const currentRatePLN = data.bitcoin.pln;
-        const currentRateUSD = data.bitcoin.usd;
+        const ratePLN = data.bitcoin.pln;
+        const rateUSD = data.bitcoin.usd;
+        const currentValuePLN = btc * ratePLN;
+        const adjustedValue = pln / inflation.factor;
+        const profitLoss = currentValuePLN - adjustedValue;
+        const profitClass = profitLoss >= 0 ? "profit" : "loss";
 
-        const currentValuePLN = btc * currentRatePLN;
-        const currentValueUSD = btc * currentRateUSD;
-        const adjustedInitialValue = pln * inflationFactor;
-        const profitLoss = currentValuePLN - adjustedInitialValue;
-
-        document.getElementById("result").textContent =
-          `Wartość BTC dzisiaj: ${currentValuePLN.toFixed(2)} PLN (${currentValueUSD.toFixed(2)} USD)
-` +
-          `Zmieniona wartość inwestycji (uwzględniając inflację): ${adjustedInitialValue.toFixed(2)} PLN`;
-
-        const profitLossElem = document.getElementById("profitLoss");
-        profitLossElem.textContent = `Zysk / Strata: ${profitLoss.toFixed(2)} PLN`;
-        if (profitLoss >= 0) {
-          profitLossElem.style.color = "#4caf50"; // zielony
-        } else {
-          profitLossElem.style.color = "#f44336"; // czerwony
-        }
+        document.getElementById("result").innerHTML =
+          `Wartość BTC dzisiaj: ${currentValuePLN.toFixed(2)} PLN (${(btc * rateUSD).toFixed(2)} USD)<br>` +
+          `Wartość inwestycji po odliczeniu inflacji ${inflation.percentage}% to: ${adjustedValue.toFixed(2)} PLN<br>` +
+          `<span class="${profitClass}">Zysk / Strata: ${profitLoss.toFixed(2)} PLN</span>`;
       } catch (e) {
         document.getElementById("result").textContent = "Nie udało się pobrać kursu BTC. Sprawdź połączenie internetowe.";
-        document.getElementById("profitLoss").textContent = "";
       }
     }
 
