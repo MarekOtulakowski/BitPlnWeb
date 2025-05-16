@@ -1,6 +1,8 @@
 # BitPlnWeb
 Przeliczanie aktualnej wartości inwestycji BTC w PLN
 
+![example](https://github.com/user-attachments/assets/3727d6b7-4153-4ec0-8e18-230a4692e2c4)
+
 # run on PC / Mac
 Open in www browser example Chrome
 https://marekotulakowski.github.io/BitPlnWeb/
